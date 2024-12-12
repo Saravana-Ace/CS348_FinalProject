@@ -22,13 +22,26 @@ app.listen(port, () => {
 });
 
 app.get('/search-players', async (req, res) => {
-    const { firstName } = req.query; // Extract 'position' from the query parameters
+    const { firstName, minPoints, maxPoints } = req.query;
 
     try {
-        
-        // Query the database for players matching the specified position
-        const players = await Player.find({firstName})
-        res.json(players); // Send the result as JSON to the frontend
+        let query = {};
+
+        // Add firstName to query if provided
+        if (firstName) {
+            query.firstName = { $regex: new RegExp(firstName, 'i') };
+        }
+
+        // Add points range to query if provided
+        if (minPoints || maxPoints) {
+            query.pointsAvg = {};
+            if (minPoints) query.pointsAvg.$gte = parseFloat(minPoints);
+            if (maxPoints) query.pointsAvg.$lte = parseFloat(maxPoints);
+        }
+
+        // Query the database for players matching the criteria
+        const players = await Player.find(query);
+        res.json(players);
     } catch (error) {
         console.error('Error fetching players:', error);
         res.status(500).send('Error fetching players');
@@ -37,9 +50,20 @@ app.get('/search-players', async (req, res) => {
 
 app.post('/add-player', async (req, res) => {
     try {
-        const { firstName, lastName, teamId, teamName, position } = req.body;
+        const { firstName, lastName, teamId, teamName, position, pointsAvg, reboundsAvg, assistsAvg } = req.body;
         console.log("Adding player: ", firstName, lastName, "to team:", teamName);
-        const newPlayer = new Player({ firstName, lastName, teamId, teamName, position });
+
+        const newPlayer = new Player({
+            firstName,
+            lastName,
+            teamId,
+            teamName,
+            position,
+            pointsAvg,
+            reboundsAvg,
+            assistsAvg,
+        });
+
         await newPlayer.save();
         res.status(201).json({ message: 'Player added successfully!' });
     } catch (error) {
