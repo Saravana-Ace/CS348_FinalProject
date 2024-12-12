@@ -1,3 +1,4 @@
+// indexed on all values
 const mongoose = require('mongoose');
 
 const playerSchema = new mongoose.Schema({
